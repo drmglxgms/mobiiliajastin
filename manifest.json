@@ -1,0 +1,9 @@
+{
+  "name": "Mobiiliajastin",
+  "short_name": "Ajastin",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#071426",
+  "theme_color": "#0d6efd",
+  "description": "Mobiili ajastin ja streak-seuranta."
+}
