@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <meta name="theme-color" content="#0b1120">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ajastin">
+
+  <title>Mobiiliajastin</title>
+  <style>
+    :root {
+      --bg-color: #0b1120;
+      --card-bg: rgba(22, 32, 50, 0.75);
+      --drawer-bg: #0f172a;
+      --accent-blue: #3b82f6;
+      --accent-blue-glow: rgba(59, 130, 246, 0.5);
+      --accent-red: #ef4444;
+      --accent-red-hover: #dc2626;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      position: relative;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    /* Taustapartikkelit */
+    #particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Yläpalkki */
+    .top-bar {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .icon-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.92);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .streak-badge {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1);
+    }
+
+    /* Sivuvalikko (Drawer) */
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .drawer-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 290px;
+      height: 100%;
+      background: var(--drawer-bg);
+      border-right: 1px solid var(--border-color);
+      z-index: 100;
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+      overflow-y: auto;
+    }
+
+    .drawer-overlay.active .drawer {
+      transform: translateX(300px);
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .drawer-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    .btn-new-timer {
+      background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+      color: #fff;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      margin-bottom: 24px;
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-new-timer:active {
+      transform: scale(0.96);
+    }
+
+    .menu-section {
+      margin-bottom: 20px;
+    }
+
+    .menu-section-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 10px;
+      padding-left: 4px;
+    }
+
+    .menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .menu-item.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .menu-item-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+
+    .menu-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-btn:hover, .action-btn:active {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .action-btn.delete:hover, .action-btn.delete:active {
+      color: var(--accent-red);
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    .action-btn.pinned {
+      color: #f59e0b;
+    }
+
+    /* Pääsisältö */
+    .main-content {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 20px 30px;
+      max-width: 450px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Ajastimen Nimi */
+    .timer-name-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .timer-name-input {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-main);
+      font-size: 1.4rem;
+      font-weight: 800;
+      text-align: center;
+      outline: none;
+      transition: border 0.2s;
+      max-width: 260px;
+    }
+
+    .timer-name-input:focus {
+      border-bottom-color: var(--accent-blue);
+    }
+
+    /* Iso Sininen Ympyrä */
+    .circle-container {
+      position: relative;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      border: 8px solid var(--accent-blue);
+      box-shadow: 0 0 35px var(--accent-blue-glow), inset 0 0 25px var(--accent-blue-glow);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px 0 30px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(0, 0, 0, 0) 70%);
+    }
+
+    .timer-display {
+      font-size: 2.8rem;
+      font-weight: 800;
+      font-family: monospace;
+      letter-spacing: -1px;
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    }
+
+    /* Painikkeet */
+    .controls {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      min-height: 60px;
+      margin-bottom: 25px;
+    }
+
+    /* Play Nappi (Sininen) */
+    .btn-play {
+      background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+      color: #ffffff;
+      border: none;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      font-size: 26px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+      transition: transform 0.15s ease;
+      padding-left: 4px;
+    }
+
+    .btn-play:active {
+      transform: scale(0.92);
+    }
+
+    /* Restart Nappi (Punainen tausta, valkoinen teksti/ikoni) */
+    .btn-restart {
+      background: var(--accent-red);
+      color: #ffffff;
+      border: none;
+      padding: 16px 36px;
+      border-radius: 30px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+      transition: transform 0.15s ease, background 0.2s;
+    }
+
+    .btn-restart:hover {
+      background: var(--accent-red-hover);
+    }
+
+    .btn-restart:active {
+      transform: scale(0.94);
+    }
+
+    /* Historia osio */
+    .history-card {
+      width: 100%;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border-radius: 24px;
+      padding: 20px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .history-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .history-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      font-size: 0.9rem;
+    }
+
+    .history-time {
+      font-weight: 700;
+      color: var(--accent-blue);
+    }
+
+    .history-date {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .empty-history {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 12px 0;
+    }
+
+    .btn-more {
+      width: 100%;
+      background: transparent;
+      border: 1px dashed var(--border-color);
+      color: var(--accent-blue);
+      padding: 10px;
+      border-radius: 12px;
+      margin-top: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-more:active {
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Siniset Taustapartikkelit -->
+  <canvas id="particles"></canvas>
+
+  <!-- Yläpalkki -->
+  <header class="top-bar">
+    <button class="icon-btn" id="menuBtn" onclick="toggleDrawer()" aria-label="Valikko">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+    <div class="streak-badge">
+      <span>🔥 Paras:</span>
+      <strong id="bestStreakDisplay">0s</strong>
+    </div>
+  </header>
+
+  <!-- Sivuvalikko (Drawer) -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()">
+    <nav class="drawer" onclick="event.stopPropagation()">
+      <div class="drawer-header">
+        <div class="drawer-title">⏱️ Valikko</div>
+        <button class="action-btn" onclick="toggleDrawer()">✕</button>
+      </div>
+
+      <button class="btn-new-timer" onclick="createNewTimer()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Uusi ajastin
+      </button>
+
+      <!-- Kiinnitetyt Ajastimet -->
+      <div class="menu-section">
+        <div class="menu-section-title">📌 Kiinnitetyt</div>
+        <div class="menu-list" id="pinnedList"></div>
+      </div>
+
+      <!-- Kaikki Ajastimet -->
+      <div class="menu-section">
+        <div class="menu-section-title">⏱️ Ajastimet</div>
+        <div class="menu-list" id="unpinnedList"></div>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Pääsisältö -->
+  <main class="main-content">
+
+    <!-- Ajastimen Nimi -->
+    <div class="timer-name-container">
+      <input type="text" id="timerNameInput" class="timer-name-input" onchange="updateTimerName(this.value)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+    </div>
+
+    <!-- Iso Sininen Ympyrä & Aika -->
+    <div class="circle-container">
+      <span class="timer-display" id="timeDisplay">0s</span>
+    </div>
+
+    <!-- Controls: Play / Restart -->
+    <div class="controls">
+      <!-- Play Nappi -->
+      <button class="btn-play" id="playBtn" onclick="startTimer()" aria-label="Aloita">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+      </button>
+
+      <!-- Restart Nappi (Valkoinen teksti, punainen tausta) -->
+      <button class="btn-restart hidden" id="restartBtn" onclick="restartTimer()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"></path><path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+        <span>Restart</span>
+      </button>
+    </div>
+
+    <!-- Historia Osio -->
+    <section class="history-card">
+      <div class="history-header">
+        <span class="history-title">Historia 📜</span>
+      </div>
+      <ul class="history-list" id="historyList"></ul>
+      <button class="btn-more hidden" id="showMoreBtn" onclick="toggleHistoryExpand()">Näytä lisää</button>
+    </section>
+
+  </main>
+
+  <script>
+    // --- 1. Taustapartikkelit (Canvas) ---
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let particlesArray = [];
+
+    function initParticles() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      particlesArray = [];
+      const particleCount = Math.floor(window.innerWidth / 12);
+
+      for (let i = 0; i < particleCount; i++) {
+        particlesArray.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 2 + 0.5,
+          speedX: (Math.random() - 0.5) * 0.4,
+          speedY: (Math.random() - 0.5) * 0.4,
+          opacity: Math.random() * 0.7 + 0.2
+        });
+      }
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particlesArray.forEach(p => {
+        p.x += p.speedX;
+        p.y += p.speedY;
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(59, 130, 246, ${p.opacity})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    window.addEventListener('resize', initParticles);
+    initParticles();
+    animateParticles();
+
+    // --- 2. Sovelluksen Tila & Tallennus ---
+    let timers = [];
+    try {
+      timers = JSON.parse(localStorage.getItem('mobile_streak_timers')) || [];
+    } catch (error) {
+      timers = [];
+      console.warn('Ajastimien tallennettu data ei ollut luettavassa muodossa.', error);
+    }
+
+    let activeTimerId = localStorage.getItem('mobile_active_timer_id') || null;
+    let timerInterval = null;
+    let isHistoryExpanded = false;
+
+    // Alusta oletusajastin ilman esimerkkitietoja
+    if (timers.length === 0) {
+      const defaultTimer = {
+        id: Date.now().toString(),
+        name: 'Oma Ajastin',
+        startTime: null,
+        isRunning: false,
+        bestStreak: 0,
+        history: [],
+        isPinned: false
+      };
+      timers.push(defaultTimer);
+      activeTimerId = defaultTimer.id;
+      saveState();
+    }
+
+    if (!activeTimerId && timers.length > 0) {
+      activeTimerId = timers[0].id;
+      saveState();
+    }
+
+    function saveState() {
+      localStorage.setItem('mobile_streak_timers', JSON.stringify(timers));
+      localStorage.setItem('mobile_active_timer_id', activeTimerId || '');
+    }
+
+    function getActiveTimer() {
+      return timers.find(t => t.id === activeTimerId) || timers[0];
+    }
+
+    // Ajan muotoilu (1d 2h 24min 24s)
+    function formatTime(ms) {
+      if (!ms || ms <= 0) return "0s";
+      let s = Math.floor(ms / 1000);
+      let m = Math.floor(s / 60); s = s % 60;
+      let h = Math.floor(m / 60); m = m % 60;
+      let d = Math.floor(h / 24); h = h % 24;
+
+      let parts = [];
+      if (d > 0) parts.push(`${d}d`);
+      if (h > 0) parts.push(`${h}h`);
+      if (m > 0) parts.push(`${m}min`);
+      parts.push(`${s}s`);
+      return parts.join(' ');
+    }
+
+    function formatDate(timestamp) {
+      const date = new Date(timestamp);
+      return `${date.getDate()}.${date.getMonth()+1}. klo ${date.getHours()}:${date.getMinutes() < 10 ? '0' : ''}${date.getMinutes()}`;
+    }
+
+    // --- 3. UI Päivitys ---
+    function updateUI() {
+      renderMainContent();
+      renderDrawer();
+    }
+
+    function renderMainContent() {
+      const timer = getActiveTimer();
+      if (!timer) return;
+
+      document.getElementById('timerNameInput').value = timer.name;
+
+      const playBtn = document.getElementById('playBtn');
+      const restartBtn = document.getElementById('restartBtn');
+
+      if (timer.isRunning) {
+        playBtn.classList.add('hidden');
+        restartBtn.classList.remove('hidden');
+        startClockLoop();
+      } else {
+        playBtn.classList.remove('hidden');
+        restartBtn.classList.add('hidden');
+        stopClockLoop();
+        document.getElementById('timeDisplay').innerText = "0s";
+        document.getElementById('bestStreakDisplay').innerText = formatTime(timer.bestStreak);
+      }
+
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const timer = getActiveTimer();
+      const historyList = document.getElementById('historyList');
+      const showMoreBtn = document.getElementById('showMoreBtn');
+      historyList.innerHTML = '';
+
+      if (!timer.history || timer.history.length === 0) {
+        historyList.innerHTML = '<div class="empty-history">Ei vielä historiaa</div>';
+        showMoreBtn.classList.add('hidden');
+        return;
+      }
+
+      const itemsToShow = isHistoryExpanded ? timer.history : timer.history.slice(0, 3);
+
+      itemsToShow.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.className = 'history-item';
+        li.innerHTML = `
+          <div>
+            <div class="history-time">${formatTime(item.duration)}</div>
+            <div class="history-date">${formatDate(item.date)}</div>
+          </div>
+          <button class="action-btn delete" onclick="deleteHistoryItem(${index})" title="Poista suoritus">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          </button>
+        `;
+        historyList.appendChild(li);
+      });
+
+      if (timer.history.length > 3) {
+        showMoreBtn.classList.remove('hidden');
+        showMoreBtn.innerText = isHistoryExpanded ? 'Näytä vähemmän' : 'Näytä lisää';
+      } else {
+        showMoreBtn.classList.add('hidden');
+      }
+    }
+
+    function renderDrawer() {
+      const pinnedList = document.getElementById('pinnedList');
+      const unpinnedList = document.getElementById('unpinnedList');
+      pinnedList.innerHTML = '';
+      unpinnedList.innerHTML = '';
+
+      timers.forEach(t => {
+        const item = document.createElement('div');
+        item.className = `menu-item ${t.id === activeTimerId ? 'active' : ''}`;
+        item.onclick = () => {
+          activeTimerId = t.id;
+          saveState();
+          updateUI();
+          toggleDrawer();
+        };
+
+        item.innerHTML = `
+          <span class="menu-item-name"></span>
+          <div class="menu-item-actions">
+            <button class="action-btn ${t.isPinned ? 'pinned' : ''}" onclick="togglePin('${t.id}', event)" title="Kiinnitä">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="${t.isPinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+            </button>
+            <button class="action-btn delete" onclick="deleteTimer('${t.id}', event)" title="Poista">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </div>
+        `;
+
+        item.querySelector('.menu-item-name').textContent = t.name;
+
+        if (t.isPinned) {
+          pinnedList.appendChild(item);
+        } else {
+          unpinnedList.appendChild(item);
+        }
+      });
+    }
+
+    // --- 4. Ajastimen Toiminnot ---
+    function startTimer() {
+      const timer = getActiveTimer();
+      if (!timer) return;
+
+      timer.isRunning = true;
+      timer.startTime = Date.now();
+      saveState();
+      renderMainContent();
+    }
+
+    function restartTimer() {
+      const timer = getActiveTimer();
+      if (!timer || !timer.startTime) return;
+
+      if (confirm("Haluatko varmasti nollata ajan? Tulos tallennetaan historiaan.")) {
+        const duration = Date.now() - timer.startTime;
+
+        // Päivitä paras putki jos ennätys
+        if (duration > timer.bestStreak) {
+          timer.bestStreak = duration;
+        }
+
+        // Tallenna historiaan
+        timer.history.unshift({
+          date: Date.now(),
+          duration: duration
+        });
+
+        // Nollaa tila
+        timer.isRunning = false;
+        timer.startTime = null;
+
+        saveState();
+        renderMainContent();
+      }
+    }
+
+    function startClockLoop() {
+      stopClockLoop();
+      function loop() {
+        const timer = getActiveTimer();
+        if (timer && timer.isRunning && timer.startTime) {
+          const elapsed = Date.now() - timer.startTime;
+          document.getElementById('timeDisplay').innerText = formatTime(elapsed);
+
+          // Päivitä paras putki REAALIAJASSA jos se ylittää vanhan
+          if (elapsed > timer.bestStreak) {
+            timer.bestStreak = elapsed;
+            document.getElementById('bestStreakDisplay').innerText = formatTime(elapsed);
+          } else {
+            document.getElementById('bestStreakDisplay').innerText = formatTime(timer.bestStreak);
+          }
+
+          timerInterval = requestAnimationFrame(loop);
+        }
+      }
+      loop();
+    }
+
+    function stopClockLoop() {
+      if (timerInterval) {
+        cancelAnimationFrame(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    // Säilytä viimeisin ennätys myös silloin, kun PWA siirtyy taustalle tai suljetaan.
+    function saveCurrentRunningBest() {
+      const timer = getActiveTimer();
+      if (!timer || !timer.isRunning || !timer.startTime) return;
+
+      const elapsed = Date.now() - timer.startTime;
+      if (elapsed > timer.bestStreak) {
+        timer.bestStreak = elapsed;
+      }
+      saveState();
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        saveCurrentRunningBest();
+      }
+    });
+
+    window.addEventListener('pagehide', saveCurrentRunningBest);
+
+    // --- 5. Hallinta & Valikko ---
+    function createNewTimer() {
+      const newTimer = {
+        id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(),
+        name: 'Uusi Ajastin',
+        startTime: null,
+        isRunning: false,
+        bestStreak: 0,
+        history: [],
+        isPinned: false
+      };
+      timers.push(newTimer);
+      activeTimerId = newTimer.id;
+      saveState();
+      updateUI();
+      toggleDrawer();
+    }
+
+    function updateTimerName(newName) {
+      const timer = getActiveTimer();
+      if (timer && newName.trim() !== '') {
+        timer.name = newName;
+        saveState();
+        renderDrawer();
+      }
+    }
+
+    function togglePin(id, event) {
+      event.stopPropagation();
+      const timer = timers.find(t => t.id === id);
+      if (timer) {
+        timer.isPinned = !timer.isPinned;
+        saveState();
+        renderDrawer();
+      }
+    }
+
+    function deleteTimer(id, event) {
+      event.stopPropagation();
+      if (timers.length <= 1) {
+        alert("Et voi poistaa viimeistä ajastinta!");
+        return;
+      }
+      if (confirm("Haluatko varmasti poistaa tämän ajastimen?")) {
+        timers = timers.filter(t => t.id !== id);
+        if (activeTimerId === id) {
+          activeTimerId = timers[0].id;
+        }
+        saveState();
+        updateUI();
+      }
+    }
+
+    function deleteHistoryItem(index) {
+      const timer = getActiveTimer();
+      if (timer && timer.history) {
+        timer.history.splice(index, 1);
+        saveState();
+        renderHistory();
+      }
+    }
+
+    function toggleHistoryExpand() {
+      isHistoryExpanded = !isHistoryExpanded;
+      renderHistory();
+    }
+
+    function toggleDrawer() {
+      document.getElementById('drawerOverlay').classList.toggle('active');
+    }
+
+    // --- 6. PWA ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js', { scope: './' })
+          .then(() => {
+            console.log('Mobiiliajastin PWA käytössä.');
+          })
+          .catch(error => {
+            console.warn('PWA Service Worker ei käynnistynyt:', error);
+          });
+      });
+    }
+
+    // Käynnistä sovellus
+    updateUI();
+  </script>
+</body>
+</html>
